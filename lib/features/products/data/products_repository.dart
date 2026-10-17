@@ -88,6 +88,19 @@ class ProductsRepository {
         .toList();
   }
 
+  Future<Product> getProduct(int id) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/products/$id',
+    );
+  
+    final data = response.data;
+    if (data == null) {
+      throw const FormatException('Invalid product response.');
+    }
+  
+    return Product.fromJson(data);
+  }
+
 }
 
 

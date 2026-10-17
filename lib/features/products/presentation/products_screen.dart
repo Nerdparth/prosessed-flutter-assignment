@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/products_repository.dart';
 import '../domain/product.dart';
@@ -331,8 +332,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                   );
                                 }
 
-                                return _ProductCard(
-                                  product: _products[index],
+                                return InkWell(
+                                  onTap: () => context.push('/products/${_products[index].id}'),
+                                  child: _ProductCard(product: _products[index]),
                                 );
                               },
                             ),
