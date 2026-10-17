@@ -11,15 +11,48 @@ final productsRepositoryProvider = Provider<ProductsRepository>(
   (ref) => ProductsRepository(),
 );
 
-final productsProvider = FutureProvider.family<List<Product>, String>(
-  (ref, query) {
+
+final categoriesProvider = FutureProvider<List<String>>((ref) {
+  return ref.watch(productsRepositoryProvider).getCategories();
+});
+
+final productsProvider =
+    FutureProvider.family<
+        List<Product>,
+        ({String query, String category, String sort})>(
+  (ref, filters) async {
     final repository = ref.watch(productsRepositoryProvider);
 
-    if (query.trim().isEmpty) {
-      return repository.getProducts();
+    List<Product> products;
+
+    if (filters.query.trim().isNotEmpty) {
+      products = await repository.searchProducts(
+        query: filters.query.trim(),
+      );
+    } else if (filters.category.isNotEmpty) {
+      products = await repository.getProductsByCategory(
+        category: filters.category,
+      );
+    } else {
+      products = await repository.getProducts();
     }
 
-    return repository.searchProducts(query: query.trim());
+    switch (filters.sort) {
+      case 'Price: low to high':
+        products.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'Price: high to low':
+        products.sort((a, b) => b.price.compareTo(a.price));
+        break;
+      case 'Rating':
+        products.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'Title':
+        products.sort((a, b) => a.title.compareTo(b.title));
+        break;
+    }
+
+    return products;
   },
 );
 
@@ -34,6 +67,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final _searchController = TextEditingController();
   Timer? _debounce;
   String _query = '';
+  String _category = '';
+  String _sort = 'Default';
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
@@ -53,7 +88,15 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final productsAsync = ref.watch(productsProvider(_query));
+    final productsAsync = ref.watch(
+      productsProvider((
+        query: _query,
+        category: _category,
+        sort: _sort,
+      )),
+    );
+    
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -93,6 +136,69 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ),
             ),
           ),
+          
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Column(
+              children: [
+                categoriesAsync.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (error, stack) => const SizedBox.shrink(),
+                  data: (categories) => SizedBox(
+                    height: 42,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _CategoryChip(
+                          label: 'All',
+                          selected: _category.isEmpty,
+                          onTap: () => setState(() => _category = ''),
+                        ),
+                        ...categories.map(
+                          (category) => _CategoryChip(
+                            label: category
+                                .replaceAll('-', ' ')
+                                .split(' ')
+                                .map((word) => word.isEmpty
+                                    ? word
+                                    : '${word[0].toUpperCase()}${word.substring(1)}')
+                                .join(' '),
+                            selected: _category == category,
+                            onTap: () => setState(() => _category = category),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: DropdownButton<String>(
+                    value: _sort,
+                    underline: const SizedBox.shrink(),
+                    items: const [
+                      DropdownMenuItem(value: 'Default', child: Text('Featured')),
+                      DropdownMenuItem(
+                        value: 'Price: low to high',
+                        child: Text('Price: low to high'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Price: high to low',
+                        child: Text('Price: high to low'),
+                      ),
+                      DropdownMenuItem(value: 'Rating', child: Text('Top rated')),
+                      DropdownMenuItem(value: 'Title', child: Text('Name A–Z')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _sort = value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           Expanded(
             child: productsAsync.when(
               loading: () => const Center(
@@ -110,7 +216,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                       const SizedBox(height: 8),
                       FilledButton(
                         onPressed: () =>
-                            ref.invalidate(productsProvider(_query)),
+                            ref.invalidate(productsProvider((query: _query,
+                              category: _category,
+                              sort: _sort,))),
                         child: const Text('Try again'),
                       ),
                     ],
@@ -126,7 +234,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
                 return RefreshIndicator(
                   onRefresh: () =>
-                      ref.refresh(productsProvider(_query).future),
+                      ref.refresh(productsProvider((query: _query,
+                        category: _category,
+                        sort: _sort)).future),
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:
@@ -214,3 +324,29 @@ class _ProductCard extends StatelessWidget {
     );
   }
 }
+
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onTap(),
+      ),
+    );
+  }
+}
+

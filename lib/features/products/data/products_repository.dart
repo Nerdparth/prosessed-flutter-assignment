@@ -58,7 +58,36 @@ class ProductsRepository {
         .map((item) => Product.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
   
+  Future<List<String>> getCategories() async {
+    final response = await _dio.get<List<dynamic>>('/products/category-list');
+  
+    return (response.data ?? [])
+        .whereType<String>()
+        .toList();
+  }
+  
+  Future<List<Product>> getProductsByCategory({
+    required String category,
+    int limit = 20,
+    int skip = 0,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/products/category/$category',
+      queryParameters: {'limit': limit, 'skip': skip},
+    );
+  
+    final data = response.data;
+    if (data == null || data['products'] is! List) {
+      throw const FormatException('Invalid category response.');
+    }
+  
+    return (data['products'] as List)
+        .map((item) => Product.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
 }
 
 
