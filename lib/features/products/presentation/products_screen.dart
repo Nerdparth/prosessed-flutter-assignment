@@ -351,14 +351,22 @@ class _ProductCard extends StatelessWidget {
             Expanded(
               child: SizedBox(
                 width: double.infinity,
-                child: CachedNetworkImage(
-                  imageUrl: product.thumbnail,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                child: Hero(
+                  tag: 'product-image-${product.id}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: CachedNetworkImage(
+                      imageUrl: product.thumbnail,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => const Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 36,
+                      ),
+                    ),
                   ),
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.image_not_supported_outlined, size: 36),
                 ),
               ),
             ),

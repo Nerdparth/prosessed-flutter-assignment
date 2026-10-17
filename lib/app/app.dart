@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:flutter/cupertino.dart';
 import '../core/network/api_client.dart';
 
 import '../features/auth/presentation/splash_screen.dart';
@@ -17,7 +17,7 @@ class ShopSphereApp extends ConsumerWidget {
   const ShopSphereApp({super.key});
 
   static final GoRouter _router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     routes: [
       GoRoute(
         path: '/splash',
@@ -30,9 +30,25 @@ class ShopSphereApp extends ConsumerWidget {
       ),
       GoRoute(
         path: '/products/:id',
-        builder: (context, state) => ProductDetailsScreen(
-          productId: int.parse(state.pathParameters['id']!),
-        ),
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: ProductDetailsScreen(
+              productId: int.parse(state.pathParameters['id']!),
+            ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          );
+        },
       ),
       GoRoute(path: '/cart', builder: (context, state) => const CartScreen()),
       GoRoute(

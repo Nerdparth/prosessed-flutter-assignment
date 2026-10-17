@@ -10,7 +10,10 @@ import '../../../app/app_theme.dart';
 import '../domain/product.dart';
 import 'products_screen.dart';
 
+import 'package:dio/dio.dart';
+
 final productDetailsProvider = FutureProvider.family<Product, int>((ref, id) {
+  debugPrint('🔍 Fetching product details: $id');
   return ref.watch(productsRepositoryProvider).getProduct(id);
 });
 
@@ -54,25 +57,42 @@ class ProductDetailsScreen extends ConsumerWidget {
       ),
       body: productAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline, size: 48),
-                const SizedBox(height: 12),
-                const Text('Could not load this product.'),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: () =>
-                      ref.invalidate(productDetailsProvider(productId)),
-                  child: const Text('Try again'),
-                ),
-              ],
+        error: (error, stack) {
+          final isNotFound =
+              error is DioException && error.response?.statusCode == 404;
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isNotFound ? Icons.search_off_rounded : Icons.error_outline,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    isNotFound ? 'Product not found' : 'Could not load this product. Please check your connection.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  if (isNotFound)
+                    FilledButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('Back to shopping'),
+                    )
+                  else
+                    FilledButton(
+                      onPressed: () =>
+                          ref.invalidate(productDetailsProvider(productId)),
+                      child: const Text('Try again'),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
         data: (product) => _ProductDetails(product: product),
       ),
     );
@@ -118,14 +138,25 @@ class _ProductDetailsState extends ConsumerState<_ProductDetails> {
           child: PageView.builder(
             itemCount: images.length,
             onPageChanged: (index) => setState(() => _imageIndex = index),
-            itemBuilder: (context, index) => CachedNetworkImage(
-              imageUrl: images[index],
-              fit: BoxFit.contain,
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) =>
-                  const Icon(Icons.image_not_supported, size: 48),
-            ),
+            itemBuilder: (context, index) {
+              final image = CachedNetworkImage(
+                imageUrl: images[index],
+                fit: BoxFit.contain,
+                placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) =>
+                    const Icon(Icons.image_not_supported, size: 48),
+              );
+            
+              if (index == 0) {
+                return Hero(
+                  tag: 'product-image-${product.id}',
+                  child: image,
+                );
+              }
+            
+              return image;
+            },
           ),
         ),
         const SizedBox(height: 12),
