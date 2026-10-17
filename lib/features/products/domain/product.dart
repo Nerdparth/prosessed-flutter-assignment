@@ -73,4 +73,11 @@ class ProductReview {
       date: json['date'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'rating': rating,
+    'comment': comment,
+    'reviewerName': reviewerName,
+    'date': date,
+  };
 }
