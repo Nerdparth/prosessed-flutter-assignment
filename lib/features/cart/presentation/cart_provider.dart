@@ -67,6 +67,31 @@ class CartNotifier extends Notifier<List<CartItem>> {
     state = [];
   }
 
+  void addProductWithQuantity(Product product, int quantity) {
+    if (quantity <= 0 || product.stock <= 0) return;
+  
+    final index = state.indexWhere(
+      (item) => item.product.id == product.id,
+    );
+  
+    final updated = [...state];
+  
+    if (index != -1) {
+      final item = updated[index];
+      final newQuantity = item.quantity + quantity;
+  
+      if (newQuantity > product.stock) return;
+  
+      updated[index] = item.copyWith(quantity: newQuantity);
+    } else {
+      if (quantity > product.stock) return;
+  
+      updated.add(CartItem(product: product, quantity: quantity));
+    }
+  
+    state = updated;
+  }
+
   double get subtotal => state.fold(
         0,
         (sum, item) => sum + item.subtotal,

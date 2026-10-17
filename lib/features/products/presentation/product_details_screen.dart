@@ -2,7 +2,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../cart/presentation/cart_provider.dart';
 import '../../../app/app_theme.dart';
 import '../domain/product.dart';
 import 'products_screen.dart';
@@ -22,7 +22,30 @@ class ProductDetailsScreen extends ConsumerWidget {
     final productAsync = ref.watch(productDetailsProvider(productId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Product details')),
+      appBar: AppBar(
+        title: const Text('Product details'),
+        actions: [
+          Consumer(
+            builder: (context, ref, child) {
+              final items = ref.watch(cartProvider);
+              final count = items.fold<int>(
+                0,
+                (sum, item) => sum + item.quantity,
+              );
+      
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Center(
+                  child: Text(
+                    'Cart: $count',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: productAsync.when(
         loading: () => const Center(
           child: CircularProgressIndicator(),
@@ -52,22 +75,32 @@ class ProductDetailsScreen extends ConsumerWidget {
   }
 }
 
-class _ProductDetails extends StatefulWidget {
+class _ProductDetails extends ConsumerStatefulWidget {
   const _ProductDetails({required this.product});
 
   final Product product;
 
   @override
-  State<_ProductDetails> createState() => _ProductDetailsState();
+  ConsumerState<_ProductDetails> createState() =>
+      _ProductDetailsState();
 }
 
-class _ProductDetailsState extends State<_ProductDetails> {
+class _ProductDetailsState
+    extends ConsumerState<_ProductDetails> {
   int _imageIndex = 0;
   int _quantity = 1;
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
+    
+    final cartItems = ref.watch(cartProvider);
+    final cartItem = cartItems.where(
+      (item) => item.product.id == product.id,
+    ).firstOrNull;
+    final quantityInCart = cartItem?.quantity ?? 0;
+    final alreadyInCart = quantityInCart > 0;
+
     final images = product.images.isEmpty
         ? [product.thumbnail]
         : product.images;
@@ -199,21 +232,51 @@ class _ProductDetailsState extends State<_ProductDetails> {
           ],
         ),
         const SizedBox(height: 12),
+        
         FilledButton.icon(
           onPressed: outOfStock
               ? null
               : () {
+                  final requestedQuantity = quantityInCart + _quantity;
+        
+                  if (requestedQuantity > product.stock) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Not enough stock available.'),
+                      ),
+                    );
+                    return;
+                  }
+        
+                  ref.read(cartProvider.notifier).addProductWithQuantity(
+                        product,
+                        _quantity,
+                      );
+        
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Ready to add $_quantity × ${product.title} to cart.',
+                        alreadyInCart
+                            ? 'Cart updated: ${product.title}'
+                            : '${product.title} added to cart',
                       ),
                     ),
                   );
                 },
-          icon: const Icon(Icons.shopping_cart_outlined),
-          label: Text(outOfStock ? 'Out of stock' : 'Add to cart'),
+          icon: Icon(
+            alreadyInCart
+                ? Icons.shopping_cart_checkout
+                : Icons.add_shopping_cart,
+          ),
+          label: Text(
+            outOfStock
+                ? 'Out of stock'
+                : alreadyInCart
+                    ? 'In cart ($quantityInCart) · Add more'
+                    : 'Add to cart',
+          ),
         ),
+
         const SizedBox(height: 28),
         Text(
           'Customer reviews (${product.reviews.length})',
