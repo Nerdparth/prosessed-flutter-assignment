@@ -325,7 +325,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       );
 
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(

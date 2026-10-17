@@ -1,4 +1,3 @@
-
 class Product {
   const Product({
     required this.id,
@@ -36,19 +35,19 @@ class Product {
       thumbnail: json['thumbnail'] as String? ?? '',
       stock: json['stock'] as int? ?? 0,
       brand: json['brand'] as String?,
-      discountPercentage:
-          (json['discountPercentage'] as num?)?.toDouble() ?? 0,images: (json['images'] as List<dynamic>?)
-                  ?.whereType<String>()
-                  .toList() ??
-              [],
-          reviews: (json['reviews'] as List<dynamic>?)
-                  ?.map((review) =>
-                      ProductReview.fromJson(review as Map<String, dynamic>))
-                  .toList() ??
-              [],
-        
+      discountPercentage: (json['discountPercentage'] as num?)?.toDouble() ?? 0,
+      images:
+          (json['images'] as List<dynamic>?)?.whereType<String>().toList() ??
+          [],
+      reviews:
+          (json['reviews'] as List<dynamic>?)
+              ?.map(
+                (review) =>
+                    ProductReview.fromJson(review as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
     );
-    
   }
 }
 

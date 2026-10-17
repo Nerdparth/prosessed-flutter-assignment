@@ -182,9 +182,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () {
-              context.go("/cart");
-            },
+            onPressed: () => context.go('/profile'),
+            icon: const Icon(Icons.person_outline_rounded),
+            tooltip: 'Profile',
+          ),
+          IconButton(
+            onPressed: () => context.go('/cart'),
             icon: const Icon(Icons.shopping_cart_outlined),
             tooltip: 'Cart',
           ),

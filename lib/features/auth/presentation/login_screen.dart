@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../data/auth_repository.dart';
 import '../../../app/app_theme.dart';
+
 import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authRepository = AuthRepository();
-  
+
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -30,26 +32,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     if (_isLoading || !_formKey.currentState!.validate()) return;
-  
+
     FocusScope.of(context).unfocus();
-  
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-  
+
     try {
       await _authRepository.login(
         username: _usernameController.text,
         password: _passwordController.text,
       );
-  
+
       if (!mounted) return;
-  
+
       context.go('/products');
     } catch (error) {
       if (!mounted) return;
-  
+
       setState(() {
         _errorMessage = error.toString().replaceFirst('Exception: ', '');
       });
@@ -66,10 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 32,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
@@ -94,9 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
                     Text(
                       'Welcome back!',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
+                      style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(
                             color: AppTheme.primary,
                             fontWeight: FontWeight.bold,
@@ -105,9 +102,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Sign in to discover products you’ll love.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.blueGrey.shade600,
-                          ),
+                      style: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(color: Colors.blueGrey.shade600),
                     ),
                     const SizedBox(height: 32),
                     const Text(
