@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -112,10 +111,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           skip: _skip,
         );
       } else {
-        fetched = await repository.getProducts(
-          limit: _pageSize,
-          skip: _skip,
-        );
+        fetched = await repository.getProducts(limit: _pageSize, skip: _skip);
       }
 
       if (!mounted) return;
@@ -186,7 +182,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              context.go("/cart");
+            },
             icon: const Icon(Icons.shopping_cart_outlined),
             tooltip: 'Cart',
           ),
@@ -221,10 +219,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
             child: Column(
               children: [
                 categoriesAsync.when(
-                  loading: () =>
-                      const LinearProgressIndicator(),
-                  error: (error, stack) =>
-                      const SizedBox.shrink(),
+                  loading: () => const LinearProgressIndicator(),
+                  error: (error, stack) => const SizedBox.shrink(),
                   data: (categories) => SizedBox(
                     height: 42,
                     child: ListView(
@@ -237,11 +233,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         ),
                         ...categories.map(
                           (category) => _CategoryChip(
-                            label: category
-                                .replaceAll('-', ' '),
+                            label: category.replaceAll('-', ' '),
                             selected: _category == category,
-                            onTap: () =>
-                                _changeCategory(category),
+                            onTap: () => _changeCategory(category),
                           ),
                         ),
                       ],
@@ -270,10 +264,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         value: 'Rating',
                         child: Text('Top rated'),
                       ),
-                      DropdownMenuItem(
-                        value: 'Title',
-                        child: Text('Name A–Z'),
-                      ),
+                      DropdownMenuItem(value: 'Title', child: Text('Name A–Z')),
                     ],
                     onChanged: _changeSort,
                   ),
@@ -283,62 +274,56 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           ),
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
+                ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null && _products.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(_errorMessage!),
-                              const SizedBox(height: 12),
-                              FilledButton(
-                                onPressed: () =>
-                                    _fetchProducts(reset: true),
-                                child: const Text('Try again'),
-                              ),
-                            ],
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_errorMessage!),
+                          const SizedBox(height: 12),
+                          FilledButton(
+                            onPressed: () => _fetchProducts(reset: true),
+                            child: const Text('Try again'),
                           ),
-                        ),
-                      )
-                    : _products.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No products found. Try another search.',
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: () =>
-                                _fetchProducts(reset: true),
-                            child: GridView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 240,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: 0.66,
-                              ),
-                              itemCount: _products.length +
-                                  (_isLoadingMore ? 1 : 0),
-                              itemBuilder: (context, index) {
-                                if (index == _products.length) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
+                        ],
+                      ),
+                    ),
+                  )
+                : _products.isEmpty
+                ? const Center(
+                    child: Text('No products found. Try another search.'),
+                  )
+                : RefreshIndicator(
+                    onRefresh: () => _fetchProducts(reset: true),
+                    child: GridView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 240,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.66,
+                          ),
+                      itemCount: _products.length + (_isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _products.length) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
 
-                                return InkWell(
-                                  onTap: () => context.push('/products/${_products[index].id}'),
-                                  child: _ProductCard(product: _products[index]),
-                                );
-                              },
-                            ),
-                          ),
+                        return InkWell(
+                          onTap: () =>
+                              context.push('/products/${_products[index].id}'),
+                          child: _ProductCard(product: _products[index]),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -367,15 +352,10 @@ class _ProductCard extends StatelessWidget {
                   imageUrl: product.thumbnail,
                   fit: BoxFit.contain,
                   placeholder: (context, url) => const Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   errorWidget: (context, url, error) =>
-                      const Icon(
-                    Icons.image_not_supported_outlined,
-                    size: 36,
-                  ),
+                      const Icon(Icons.image_not_supported_outlined, size: 36),
                 ),
               ),
             ),
@@ -384,29 +364,20 @@ class _ProductCard extends StatelessWidget {
               product.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
               '\$${product.price.toStringAsFixed(2)}',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(
-                  Icons.star_rounded,
-                  size: 16,
-                  color: Colors.amber,
-                ),
+                const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
                 const SizedBox(width: 4),
                 Text(product.rating.toStringAsFixed(1)),
                 const Spacer(),

@@ -1,14 +1,16 @@
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../cart/presentation/cart_provider.dart';
+
+import 'package:go_router/go_router.dart';
+
 import '../../../app/app_theme.dart';
 import '../domain/product.dart';
 import 'products_screen.dart';
 
-final productDetailsProvider =
-    FutureProvider.family<Product, int>((ref, id) {
+final productDetailsProvider = FutureProvider.family<Product, int>((ref, id) {
   return ref.watch(productsRepositoryProvider).getProduct(id);
 });
 
@@ -32,13 +34,17 @@ class ProductDetailsScreen extends ConsumerWidget {
                 0,
                 (sum, item) => sum + item.quantity,
               );
-      
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Center(
-                  child: Text(
-                    'Cart: $count',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+
+              return InkWell(
+                onTap: () => context.push('/cart'),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Center(
+                    child: Text(
+                      'Cart: $count',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               );
@@ -47,9 +53,7 @@ class ProductDetailsScreen extends ConsumerWidget {
         ],
       ),
       body: productAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -81,23 +85,21 @@ class _ProductDetails extends ConsumerStatefulWidget {
   final Product product;
 
   @override
-  ConsumerState<_ProductDetails> createState() =>
-      _ProductDetailsState();
+  ConsumerState<_ProductDetails> createState() => _ProductDetailsState();
 }
 
-class _ProductDetailsState
-    extends ConsumerState<_ProductDetails> {
+class _ProductDetailsState extends ConsumerState<_ProductDetails> {
   int _imageIndex = 0;
   int _quantity = 1;
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    
+
     final cartItems = ref.watch(cartProvider);
-    final cartItem = cartItems.where(
-      (item) => item.product.id == product.id,
-    ).firstOrNull;
+    final cartItem = cartItems
+        .where((item) => item.product.id == product.id)
+        .firstOrNull;
     final quantityInCart = cartItem?.quantity ?? 0;
     final alreadyInCart = quantityInCart > 0;
 
@@ -115,14 +117,12 @@ class _ProductDetailsState
           height: 280,
           child: PageView.builder(
             itemCount: images.length,
-            onPageChanged: (index) =>
-                setState(() => _imageIndex = index),
+            onPageChanged: (index) => setState(() => _imageIndex = index),
             itemBuilder: (context, index) => CachedNetworkImage(
               imageUrl: images[index],
               fit: BoxFit.contain,
-              placeholder: (context, url) => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              placeholder: (context, url) =>
+                  const Center(child: CircularProgressIndicator()),
               errorWidget: (context, url, error) =>
                   const Icon(Icons.image_not_supported, size: 48),
             ),
@@ -151,9 +151,8 @@ class _ProductDetailsState
         const SizedBox(height: 24),
         Text(
           product.title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         if (product.brand != null && product.brand!.isNotEmpty) ...[
           const SizedBox(height: 6),
@@ -165,9 +164,9 @@ class _ProductDetailsState
             Text(
               '\$${discountedPrice.toStringAsFixed(2)}',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             if (product.discountPercentage > 0) ...[
               const SizedBox(width: 10),
@@ -195,17 +194,12 @@ class _ProductDetailsState
             const Spacer(),
             Text(
               outOfStock ? 'Out of stock' : '${product.stock} available',
-              style: TextStyle(
-                color: outOfStock ? Colors.red : Colors.green,
-              ),
+              style: TextStyle(color: outOfStock ? Colors.red : Colors.green),
             ),
           ],
         ),
         const SizedBox(height: 20),
-        Text(
-          'Description',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text('Description', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         Text(product.description),
         const SizedBox(height: 24),
@@ -217,10 +211,7 @@ class _ProductDetailsState
                   : null,
               icon: const Icon(Icons.remove_circle_outline),
             ),
-            Text(
-              '$_quantity',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text('$_quantity', style: Theme.of(context).textTheme.titleMedium),
             IconButton(
               onPressed: !outOfStock && _quantity < product.stock
                   ? () => setState(() => _quantity++)
@@ -232,13 +223,13 @@ class _ProductDetailsState
           ],
         ),
         const SizedBox(height: 12),
-        
+
         FilledButton.icon(
           onPressed: outOfStock
               ? null
               : () {
                   final requestedQuantity = quantityInCart + _quantity;
-        
+
                   if (requestedQuantity > product.stock) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -247,12 +238,11 @@ class _ProductDetailsState
                     );
                     return;
                   }
-        
-                  ref.read(cartProvider.notifier).addProductWithQuantity(
-                        product,
-                        _quantity,
-                      );
-        
+
+                  ref
+                      .read(cartProvider.notifier)
+                      .addProductWithQuantity(product, _quantity);
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -272,8 +262,8 @@ class _ProductDetailsState
             outOfStock
                 ? 'Out of stock'
                 : alreadyInCart
-                    ? 'In cart ($quantityInCart) · Add more'
-                    : 'Add to cart',
+                ? 'In cart ($quantityInCart) · Add more'
+                : 'Add to cart',
           ),
         ),
 
@@ -298,9 +288,7 @@ class _ProductDetailsState
                         Expanded(
                           child: Text(
                             review.reviewerName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                         const Icon(

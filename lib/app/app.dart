@@ -1,9 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../features/auth/presentation/login_screen.dart';
 import '../features/products/presentation/products_screen.dart';
 import '../features/products/presentation/product_details_screen.dart';
+import '../features/cart/presentation/cart_screen.dart';
 
 import 'app_theme.dart';
 
@@ -19,10 +20,7 @@ class ShopSphereApp extends StatelessWidget {
       routerConfig: GoRouter(
         initialLocation: '/',
         routes: [
-          GoRoute(
-            path: '/',
-            builder: (context, state) => const LoginScreen(),
-          ),
+          GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
           GoRoute(
             path: '/products',
             builder: (context, state) => const ProductsScreen(),
@@ -32,6 +30,10 @@ class ShopSphereApp extends StatelessWidget {
             builder: (context, state) => ProductDetailsScreen(
               productId: int.parse(state.pathParameters['id']!),
             ),
+          ),
+          GoRoute(
+            path: '/cart',
+            builder: (context, state) => const CartScreen(),
           ),
         ],
       ),
