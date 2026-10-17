@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../auth/data/auth_repository.dart';
+import '../data/cart_repository.dart';
 import '../../../app/app_theme.dart';
 import 'cart_provider.dart';
 
-class CartScreen extends ConsumerWidget {
+class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
+
+  @override
+  ConsumerState<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends ConsumerState<CartScreen> {
+  bool _isCheckingOut = false;
 
   String _money(double value) => '\$${value.toStringAsFixed(2)}';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final items = ref.watch(cartProvider);
     final cart = ref.read(cartProvider.notifier);
     final subtotal = cart.subtotal;
@@ -47,7 +57,7 @@ class CartScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => context.go('/products'),
                       child: const Text('Continue shopping'),
                     ),
                   ],
@@ -220,17 +230,13 @@ class CartScreen extends ConsumerWidget {
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Checkout will be added in the next step.',
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _isCheckingOut ? null : _checkout,
                             icon: const Icon(Icons.lock_outline),
-                            label: const Text('Proceed to checkout'),
+                            label: Text(
+                              _isCheckingOut
+                                  ? 'Processing...'
+                                  : 'Proceed to checkout',
+                            ),
                           ),
                         ),
                       ],
@@ -240,6 +246,108 @@ class CartScreen extends ConsumerWidget {
               ],
             ),
     );
+  }
+
+  Future<void> _checkout() async {
+    if (_isCheckingOut) return;
+
+    final items = ref.read(cartProvider);
+    if (items.isEmpty) return;
+
+    setState(() => _isCheckingOut = true);
+
+    try {
+      final authRepository = AuthRepository();
+      final userId = await authRepository.getUserId();
+
+      if (userId == null) {
+        throw Exception('Please log in again before checkout.');
+      }
+
+      final response = await CartRepository().checkout(
+        userId: userId,
+        items: items,
+      );
+
+      if (!mounted) return;
+
+      ref.read(cartProvider.notifier).clearCart();
+      if (!mounted) return;
+
+      ref.read(cartProvider.notifier).clearCart();
+
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheetContext) => Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.green,
+                  size: 68,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Order placed successfully!',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your demo order has been created.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Order ID: #${response['id']}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                    },
+                    child: const Text('Continue shopping'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Checkout successful! Your cart is cleared.'),
+          ),
+        );
+    } catch (error) {
+      if (!mounted) return;
+
+      final message = error.toString().contains('log in again')
+          ? 'Please log in again before checkout.'
+          : 'Checkout failed. Check your connection and try again.';
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) {
+        setState(() => _isCheckingOut = false);
+      }
+    }
   }
 }
 

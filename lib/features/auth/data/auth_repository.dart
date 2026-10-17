@@ -1,21 +1,19 @@
-
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthRepository {
-  AuthRepository({
-    Dio? dio,
-    FlutterSecureStorage? storage,
-  })  : _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: 'https://dummyjson.com',
-                connectTimeout: const Duration(seconds: 10),
-                receiveTimeout: const Duration(seconds: 10),
-                headers: {'Content-Type': 'application/json'},
-              ),
+  AuthRepository({Dio? dio, FlutterSecureStorage? storage})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              baseUrl: 'https://dummyjson.com',
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+              headers: {'Content-Type': 'application/json'},
             ),
-        _storage = storage ?? const FlutterSecureStorage();
+          ),
+      _storage = storage ?? const FlutterSecureStorage();
 
   final Dio _dio;
   final FlutterSecureStorage _storage;
@@ -37,19 +35,16 @@ class AuthRepository {
       final data = response.data;
       final accessToken = data?['accessToken'] as String?;
       final refreshToken = data?['refreshToken'] as String?;
+      final userId = data?['id'] as int?;
 
-      if (accessToken == null || refreshToken == null) {
+      if (accessToken == null || refreshToken == null || userId == null) {
         throw const FormatException('Invalid authentication response.');
       }
 
-      await _storage.write(
-        key: 'access_token',
-        value: accessToken,
-      );
-      await _storage.write(
-        key: 'refresh_token',
-        value: refreshToken,
-      );
+      await _storage.write(key: 'access_token', value: accessToken);
+      await _storage.write(key: 'refresh_token', value: refreshToken);
+
+      await _storage.write(key: 'user_id', value: userId.toString());
     } on DioException catch (error) {
       if (error.response?.statusCode == 400 ||
           error.response?.statusCode == 401) {
@@ -66,9 +61,15 @@ class AuthRepository {
     }
   }
 
+  Future<int?> getUserId() async {
+    final value = await _storage.read(key: 'user_id');
+    return value == null ? null : int.tryParse(value);
+  }
+
   Future<void> logout() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
+    await _storage.delete(key: 'user_id');
   }
 
   Future<String?> getAccessToken() {
