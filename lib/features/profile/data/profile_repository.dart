@@ -1,24 +1,19 @@
 import 'package:dio/dio.dart';
+import 'package:shopsphere/core/network/api_client.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../auth/data/auth_repository.dart';
 
 class ProfileRepository {
   ProfileRepository({Dio? dio, AuthRepository? authRepository})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              baseUrl: 'https://dummyjson.com',
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
-            ),
-          ),
+    : _dio = dio ?? ApiClient.instance.dio,
       _authRepository = authRepository ?? AuthRepository();
 
   final Dio _dio;
   final AuthRepository _authRepository;
 
   Future<Map<String, dynamic>> getProfile() async {
+    debugPrint('📡 ProfileRepository.getProfile() CALLED');
     final token = await _authRepository.getAccessToken();
 
     if (token == null || token.isEmpty) {

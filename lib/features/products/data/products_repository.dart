@@ -1,18 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:shopsphere/core/network/api_client.dart';
 
 import '../domain/product.dart';
 
 class ProductsRepository {
-  ProductsRepository({Dio? dio})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              baseUrl: 'https://dummyjson.com',
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
-            ),
-          );
+  ProductsRepository({Dio? dio}) : _dio = dio ?? ApiClient.instance.dio;
 
   final Dio _dio;
 

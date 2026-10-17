@@ -1,18 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shopsphere/core/network/api_client.dart';
 
 class AuthRepository {
   AuthRepository({Dio? dio, FlutterSecureStorage? storage})
-    : _dio =
-          dio ??
-          Dio(
-            BaseOptions(
-              baseUrl: 'https://dummyjson.com',
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
-              headers: {'Content-Type': 'application/json'},
-            ),
-          ),
+    : _dio = dio ?? ApiClient.instance.dio,
       _storage = storage ?? const FlutterSecureStorage();
 
   final Dio _dio;
@@ -45,6 +37,7 @@ class AuthRepository {
       await _storage.write(key: 'refresh_token', value: refreshToken);
 
       await _storage.write(key: 'user_id', value: userId.toString());
+      sessionExpiredNotifier.value = false;
     } on DioException catch (error) {
       if (error.response?.statusCode == 400 ||
           error.response?.statusCode == 401) {

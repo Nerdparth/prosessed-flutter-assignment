@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/network/api_client.dart';
+
+import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/products/presentation/products_screen.dart';
 import '../features/products/presentation/product_details_screen.dart';
@@ -16,6 +19,10 @@ class ShopSphereApp extends ConsumerWidget {
   static final GoRouter _router = GoRouter(
     initialLocation: '/',
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/products',
@@ -33,6 +40,13 @@ class ShopSphereApp extends ConsumerWidget {
         builder: (context, state) => const ProfileScreen(),
       ),
     ],
+    refreshListenable: sessionExpiredNotifier,
+    redirect: (context, state) {
+      if (sessionExpiredNotifier.value && state.matchedLocation != '/') {
+        return '/';
+      }
+      return null;
+    },
   );
 
   @override
