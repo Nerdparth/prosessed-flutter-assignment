@@ -34,4 +34,31 @@ class ProductsRepository {
         .map((item) => Product.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<Product>> searchProducts({
+    required String query,
+    int limit = 20,
+    int skip = 0,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/products/search',
+      queryParameters: {
+        'q': query,
+        'limit': limit,
+        'skip': skip,
+      },
+    );
+  
+    final data = response.data;
+    if (data == null || data['products'] is! List) {
+      throw const FormatException('Invalid search response.');
+    }
+  
+    return (data['products'] as List)
+        .map((item) => Product.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+  
 }
+
+
