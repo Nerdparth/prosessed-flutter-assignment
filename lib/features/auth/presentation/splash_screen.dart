@@ -32,12 +32,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.shopping_bag_rounded, size: 64),
+            Image.asset(
+              'assets/images/shopsphere_logo.png',
+              width: 88,
+              height: 88,
+            ),
             SizedBox(height: 16),
             Text(
               'ShopSphere',
