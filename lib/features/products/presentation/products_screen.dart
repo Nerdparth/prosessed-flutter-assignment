@@ -341,16 +341,25 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final discountedPrice =
+        product.price * (1 - product.discountPercentage / 100);
+
     return Card(
+      elevation: 0.5,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Product Image
             Expanded(
-              child: SizedBox(
-                width: double.infinity,
+              child: Center(
                 child: Hero(
                   tag: 'product-image-${product.id}',
                   child: Material(
@@ -364,6 +373,7 @@ class _ProductCard extends StatelessWidget {
                       errorWidget: (context, url, error) => const Icon(
                         Icons.image_not_supported_outlined,
                         size: 36,
+                        color: Colors.grey,
                       ),
                     ),
                   ),
@@ -371,30 +381,75 @@ class _ProductCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            // Title
             Text(
               product.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '\$${product.price.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                height: 1.2,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
+            // Price & Discount Row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '\$${discountedPrice.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                if (product.discountPercentage > 0) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      decoration: TextDecoration.lineThrough,
+                      color: Colors.grey,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            if (product.discountPercentage > 0) ...[
+              const SizedBox(height: 2),
+              Text(
+                '${product.discountPercentage.toStringAsFixed(0)}% off',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            // Rating & Stock Row
             Row(
               children: [
-                const Icon(Icons.star_rounded, size: 16, color: Colors.amber),
-                const SizedBox(width: 4),
-                Text(product.rating.toStringAsFixed(1)),
+                const Icon(Icons.star_rounded, size: 14, color: Colors.amber),
+                const SizedBox(width: 2),
+                Text(
+                  product.rating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const Spacer(),
                 Text(
                   '${product.stock} left',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ],
             ),
