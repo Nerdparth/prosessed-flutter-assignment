@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../products/domain/product.dart';
 import '../domain/cart_item.dart';
@@ -12,6 +12,7 @@ final cartProvider = NotifierProvider<CartNotifier, List<CartItem>>(
 
 class CartNotifier extends Notifier<List<CartItem>> {
   static const _storageKey = 'shopsphere_cart';
+  static const _storage = FlutterSecureStorage();
 
   @override
   List<CartItem> build() {
@@ -21,17 +22,26 @@ class CartNotifier extends Notifier<List<CartItem>> {
 
   Future<void> _restoreCart() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedCart = prefs.getString(_storageKey);
+      final savedCart = await _storage.read(key: _storageKey);
 
-      if (savedCart == null) return;
+      if (savedCart == null || savedCart.isEmpty) return;
 
-      final decoded = jsonDecode(savedCart) as List<dynamic>;
-      final restoredItems = decoded
-          .map(
-            (item) => CartItem.fromJson(Map<String, dynamic>.from(item as Map)),
-          )
-          .toList();
+      final decoded = jsonDecode(savedCart);
+      if (decoded is! List) {
+        await _storage.delete(key: _storageKey);
+        return;
+      }
+
+      final restoredItems = <CartItem>[];
+      for (final item in decoded) {
+        if (item is! Map) continue;
+
+        try {
+          restoredItems.add(CartItem.fromJson(Map<String, dynamic>.from(item)));
+        } catch (_) {
+          // Skip malformed item and keep valid ones.
+        }
+      }
 
       state = restoredItems;
     } catch (_) {
@@ -40,16 +50,15 @@ class CartNotifier extends Notifier<List<CartItem>> {
   }
 
   Future<void> _saveCart() async {
-    final prefs = await SharedPreferences.getInstance();
     final encoded = jsonEncode(state.map((item) => item.toJson()).toList());
-    await prefs.setString(_storageKey, encoded);
+    await _storage.write(key: _storageKey, value: encoded);
   }
 
-  void addProduct(Product product) {
-    addProductWithQuantity(product, 1);
+  Future<void> addProduct(Product product) {
+    return addProductWithQuantity(product, 1);
   }
 
-  void addProductWithQuantity(Product product, int quantity) {
+  Future<void> addProductWithQuantity(Product product, int quantity) async {
     if (quantity <= 0 || product.stock <= 0) return;
 
     final index = state.indexWhere((item) => item.product.id == product.id);
@@ -70,16 +79,16 @@ class CartNotifier extends Notifier<List<CartItem>> {
     }
 
     state = updated;
-    _saveCart();
+    await _saveCart();
   }
 
-  void updateQuantity(int productId, int quantity) {
+  Future<void> updateQuantity(int productId, int quantity) async {
     final index = state.indexWhere((item) => item.product.id == productId);
 
     if (index == -1) return;
 
     if (quantity <= 0) {
-      removeProduct(productId);
+      await removeProduct(productId);
       return;
     }
 
@@ -89,17 +98,17 @@ class CartNotifier extends Notifier<List<CartItem>> {
     final updated = [...state];
     updated[index] = item.copyWith(quantity: quantity);
     state = updated;
-    _saveCart();
+    await _saveCart();
   }
 
-  void removeProduct(int productId) {
+  Future<void> removeProduct(int productId) async {
     state = state.where((item) => item.product.id != productId).toList();
-    _saveCart();
+    await _saveCart();
   }
 
-  void clearCart() {
+  Future<void> clearCart() async {
     state = [];
-    _saveCart();
+    await _saveCart();
   }
 
   double get subtotal => state.fold(0, (sum, item) => sum + item.subtotal);

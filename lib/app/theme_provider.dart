@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
 );
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
+  static const _storage = FlutterSecureStorage();
+  static const _themeKey = 'dark_mode';
   @override
   ThemeMode build() {
     _restoreTheme();
@@ -14,18 +16,14 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   }
 
   Future<void> _restoreTheme() async {
-    final prefs = await SharedPreferences.getInstance();
+    final value = await _storage.read(key: _themeKey);
     if (!ref.mounted) return;
 
-    state = prefs.getBool('dark_mode') == true
-        ? ThemeMode.dark
-        : ThemeMode.light;
+    state = value == 'true' ? ThemeMode.dark : ThemeMode.light;
   }
 
   Future<void> toggleTheme(bool isDark) async {
     state = isDark ? ThemeMode.dark : ThemeMode.light;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('dark_mode', isDark);
+    await _storage.write(key: _themeKey, value: isDark.toString());
   }
 }
