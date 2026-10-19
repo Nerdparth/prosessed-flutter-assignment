@@ -8,8 +8,7 @@ void main() {
   runApp(
     ProviderScope(
       retry: (retryCount, error) {
-        if (error is DioException &&
-            error.response?.statusCode == 404) {
+        if (error is DioException && error.response?.statusCode == 404) {
           return null;
         }
 
