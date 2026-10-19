@@ -54,49 +54,49 @@ class _CartScreenState extends ConsumerState<CartScreen> {
           title: Text('My Cart (${cart.itemCount})'),
         ),
         body: items.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 76,
-                      color: AppTheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Your cart is empty',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 76,
+                        color: AppTheme.primary,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Find something you love and add it here.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: () => context.go('/products'),
-                      child: const Text('Continue shopping'),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Your cart is empty',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Find something you love and add it here.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: () => context.go('/products'),
+                        child: const Text('Continue shopping'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            )
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: items.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final product = item.product;
+              )
+            : Column(
+                children: [
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        final product = item.product;
 
                         return Card(
                           clipBehavior: Clip.antiAlias,
