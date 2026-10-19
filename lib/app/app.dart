@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../core/network/api_client.dart';
 
 import '../features/auth/presentation/splash_screen.dart';
@@ -35,17 +36,10 @@ class ShopSphereApp extends ConsumerWidget {
             child: ProductDetailsScreen(
               productId: int.parse(state.pathParameters['id']!),
             ),
-            transitionsBuilder: (
-              context,
-              animation,
-              secondaryAnimation,
-              child,
-            ) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           );
         },
       ),

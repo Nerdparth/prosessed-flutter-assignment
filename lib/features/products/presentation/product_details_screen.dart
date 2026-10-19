@@ -147,14 +147,11 @@ class _ProductDetailsState extends ConsumerState<_ProductDetails> {
                 errorWidget: (context, url, error) =>
                     const Icon(Icons.image_not_supported, size: 48),
               );
-            
+
               if (index == 0) {
-                return Hero(
-                  tag: 'product-image-${product.id}',
-                  child: image,
-                );
+                return Hero(tag: 'product-image-${product.id}', child: image);
               }
-            
+
               return image;
             },
           ),
