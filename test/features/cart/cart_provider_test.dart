@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shopsphere/features/cart/domain/cart_item.dart';
 import 'package:shopsphere/features/cart/presentation/cart_provider.dart';
 import 'package:shopsphere/features/products/domain/product.dart';
 
@@ -131,6 +134,39 @@ void main() {
       expect(container.read(cartProvider), isEmpty);
       expect(notifier.itemCount, 0);
       expect(notifier.grandTotal, 0);
+    });
+
+    test('restores cart from shared preferences', () async {
+      final encoded = jsonEncode([
+        CartItem(
+          product: createProduct(id: 7, price: 80, discount: 5),
+          quantity: 2,
+        ).toJson(),
+      ]);
+      SharedPreferences.setMockInitialValues({'shopsphere_cart': encoded});
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(cartProvider);
+      await Future<void>.delayed(Duration.zero);
+
+      final items = container.read(cartProvider);
+      expect(items, hasLength(1));
+      expect(items.first.product.id, 7);
+      expect(items.first.quantity, 2);
+    });
+
+    test('ignores malformed saved data safely', () async {
+      SharedPreferences.setMockInitialValues({'shopsphere_cart': '{bad json]'});
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(cartProvider);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(cartProvider), isEmpty);
     });
   });
 }
