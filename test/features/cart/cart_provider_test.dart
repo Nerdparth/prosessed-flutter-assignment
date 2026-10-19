@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopsphere/features/cart/domain/cart_item.dart';
 import 'package:shopsphere/features/cart/presentation/cart_provider.dart';
 import 'package:shopsphere/features/products/domain/product.dart';
@@ -26,8 +26,51 @@ Product createProduct({
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  const secureStorageChannel = MethodChannel(
+    'plugins.it_nomads.com/flutter_secure_storage',
+  );
+  final inMemoryStorage = <String, String>{};
+
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorageChannel, (call) async {
+          final arguments =
+              (call.arguments as Map<Object?, Object?>?) ??
+              <Object?, Object?>{};
+          final key = arguments['key'] as String?;
+
+          switch (call.method) {
+            case 'read':
+              if (key == null) return null;
+              return inMemoryStorage[key];
+            case 'write':
+              if (key != null) {
+                inMemoryStorage[key] = (arguments['value'] as String?) ?? '';
+              }
+              return null;
+            case 'delete':
+              if (key != null) {
+                inMemoryStorage.remove(key);
+              }
+              return null;
+            case 'deleteAll':
+              inMemoryStorage.clear();
+              return null;
+            default:
+              return null;
+          }
+        });
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(secureStorageChannel, null);
+  });
+
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    inMemoryStorage.clear();
   });
 
   group('CartNotifier', () {
@@ -136,14 +179,14 @@ void main() {
       expect(notifier.grandTotal, 0);
     });
 
-    test('restores cart from shared preferences', () async {
+    test('restores cart from secure storage', () async {
       final encoded = jsonEncode([
         CartItem(
           product: createProduct(id: 7, price: 80, discount: 5),
           quantity: 2,
         ).toJson(),
       ]);
-      SharedPreferences.setMockInitialValues({'shopsphere_cart': encoded});
+      inMemoryStorage['shopsphere_cart'] = encoded;
 
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -158,7 +201,7 @@ void main() {
     });
 
     test('ignores malformed saved data safely', () async {
-      SharedPreferences.setMockInitialValues({'shopsphere_cart': '{bad json]'});
+      inMemoryStorage['shopsphere_cart'] = '{bad json]';
 
       final container = ProviderContainer();
       addTearDown(container.dispose);
