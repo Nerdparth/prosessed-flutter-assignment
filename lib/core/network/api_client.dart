@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 
 final sessionExpiredNotifier = ValueNotifier<bool>(false);
 
+final sessionExpiredMessageNotifier = ValueNotifier<String?>(null);
+
 class ApiClient {
   ApiClient._();
 

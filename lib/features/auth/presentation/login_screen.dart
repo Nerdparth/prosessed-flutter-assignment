@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/auth_repository.dart';
 import '../../../app/app_theme.dart';
+import '../../../core/network/api_client.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -28,6 +29,23 @@ class _LoginScreenState extends State<LoginScreen> {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final message = sessionExpiredMessageNotifier.value;
+      if (message == null) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+
+      sessionExpiredMessageNotifier.value = null;
+    });
   }
 
   Future<void> _handleLogin() async {
